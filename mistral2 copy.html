@@ -1,0 +1,1365 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mistral Document Chat UI</title>
+  <style>
+    :root {
+      --primary: #7065F0;
+      --primary-light: #8F84F1;
+      --primary-dark: #5A50D2;
+      --secondary: #30B9DB;
+      --background: #F8F9FE;
+      --card-bg: #FFFFFF;
+      --text-primary: #2A2C3A;
+      --text-secondary: #686B7E;
+      --success: #34D399;
+      --warning: #FBBF24;
+      --error: #F87171;
+      --border: #E2E4EE;
+      --hover: #F0F2FA;
+      --shadow-sm: 0 2px 4px rgba(0,0,0,0.05);
+      --shadow-md: 0 4px 6px rgba(0,0,0,0.07), 0 2px 4px rgba(0,0,0,0.05);
+      --shadow-lg: 0 10px 15px rgba(0,0,0,0.07), 0 4px 6px rgba(0,0,0,0.05);
+      --radius-sm: 6px;
+      --radius-md: 10px;
+      --radius-lg: 16px;
+      --transition: all 0.2s ease;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: var(--background);
+      color: var(--text-primary);
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+      line-height: 1.6;
+      font-size: 15px;
+    }
+
+    .app-container {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 2rem;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 2.5rem;
+    }
+
+    h1, h2, h3, h4 {
+      font-family: 'Outfit', sans-serif;
+      margin: 0;
+      font-weight: 600;
+    }
+
+    h1 {
+      font-size: 2.2rem;
+      background: linear-gradient(120deg, var(--primary), var(--secondary));
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      margin-bottom: 0.75rem;
+    }
+
+    .subtitle {
+      color: var(--text-secondary);
+      font-size: 1.1rem;
+      max-width: 600px;
+      margin: 0 auto;
+    }
+
+    .container {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    .card {
+      background-color: var(--card-bg);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-md);
+      overflow: hidden;
+      transition: var(--transition);
+    }
+
+    .card:hover {
+      box-shadow: var(--shadow-lg);
+      transform: translateY(-2px);
+    }
+
+    /* Form elements */
+    .form-group {
+      margin-bottom: 1.25rem;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 0.5rem;
+      font-weight: 500;
+      color: var(--text-secondary);
+    }
+
+    input, select, textarea {
+      width: 100%;
+      padding: 0.75rem 1rem;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      font-family: inherit;
+      font-size: 0.95rem;
+      transition: var(--transition);
+      background-color: white;
+      color: var(--text-primary);
+    }
+
+    input:focus, select:focus, textarea:focus {
+      border-color: var(--primary-light);
+      box-shadow: 0 0 0 3px rgba(112, 101, 240, 0.15);
+      outline: none;
+    }
+
+    /* Buttons */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0.75rem 1.5rem;
+      border-radius: var(--radius-md);
+      font-weight: 500;
+      cursor: pointer;
+      transition: var(--transition);
+      border: none;
+      font-family: inherit;
+      font-size: 0.95rem;
+      gap: 0.5rem;
+    }
+
+    .btn-primary {
+      background: linear-gradient(120deg, var(--primary), var(--primary-dark));
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background: linear-gradient(120deg, var(--primary-dark), var(--primary-dark));
+      transform: translateY(-1px);
+      box-shadow: 0 4px 8px rgba(112, 101, 240, 0.25);
+    }
+
+    .btn-secondary {
+      background-color: white;
+      border: 1px solid var(--border);
+      color: var(--text-secondary);
+    }
+
+    .btn-secondary:hover {
+      background-color: var(--hover);
+      color: var(--primary);
+    }
+
+    .btn-group {
+      display: flex;
+      gap: 0.75rem;
+      margin-top: 1rem;
+    }
+
+    /* Results area */
+    #results {
+      margin-top: 1.5rem;
+    }
+
+    .result-card {
+      background-color: var(--background);
+      border-radius: var(--radius-md);
+      padding: 1.25rem;
+      margin-top: 1.25rem;
+    }
+
+    .result-title {
+      font-size: 1.05rem;
+      margin-bottom: 0.75rem;
+      font-weight: 600;
+      color: var(--primary-dark);
+    }
+
+    .result-content {
+      background-color: white;
+      border-radius: var(--radius-sm);
+      padding: 1.25rem;
+      white-space: pre-wrap;
+      overflow-x: auto;
+      line-height: 1.7;
+      border: 1px solid var(--border);
+    }
+
+    .result {
+      background-color: white;
+      border-left: 4px solid var(--primary);
+      padding: 1.25rem;
+      margin-top: 1.25rem;
+      white-space: pre-wrap;
+      overflow-x: auto;
+      border-radius: var(--radius-sm);
+      box-shadow: var(--shadow-sm);
+    }
+
+    /* Loading indicator */
+    .loading {
+      display: none;
+      text-align: center;
+      padding: 1.5rem;
+      color: var(--text-secondary);
+    }
+
+    .loading .spinner {
+      display: inline-block;
+      width: 2.5rem;
+      height: 2.5rem;
+      border: 3px solid rgba(112, 101, 240, 0.2);
+      border-radius: 50%;
+      border-top-color: var(--primary);
+      animation: spin 1s linear infinite;
+      margin-bottom: 1rem;
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    /* Error message */
+    .error {
+      display: none;
+      color: var(--error);
+      background-color: rgba(248, 113, 113, 0.1);
+      padding: 1rem;
+      border-radius: var(--radius-md);
+      margin: 1rem 0;
+      font-weight: 500;
+    }
+
+    /* Tabs styling */
+    .tabs {
+      display: flex;
+      position: relative;
+      background-color: var(--background);
+      padding: 0.5rem;
+      border-radius: var(--radius-md);
+      margin: 1rem;
+      overflow: hidden;
+    }
+
+    .tab {
+      padding: 0.75rem 1.25rem;
+      font-weight: 500;
+      cursor: pointer;
+      flex: 1;
+      text-align: center;
+      border-radius: var(--radius-sm);
+      transition: var(--transition);
+      position: relative;
+      z-index: 1;
+    }
+
+    .tab.active {
+      color: white;
+    }
+
+    .tab-indicator {
+      position: absolute;
+      background: linear-gradient(120deg, var(--primary), var(--secondary));
+      height: 80%;
+      top: 10%;
+      border-radius: var(--radius-sm);
+      transition: var(--transition);
+      width: calc(100% / 3 - 0.5rem);
+      z-index: 0;
+    }
+
+    .tab-content {
+      display: none;
+      padding: 1.5rem;
+    }
+
+    .tab-content.active {
+      display: block;
+      animation: fadeIn 0.3s ease;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(5px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    /* Info boxes */
+    .info-box {
+      background-color: rgba(112, 101, 240, 0.05);
+      border-left: 3px solid var(--primary);
+      padding: 1rem 1.25rem;
+      margin: 1.25rem 0;
+      border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+    }
+
+    .info-box p {
+      margin: 0 0 0.5rem 0;
+      font-weight: 600;
+      color: var(--primary-dark);
+    }
+
+    .info-box ul {
+      margin: 0;
+      padding-left: 1.25rem;
+      color: var(--text-secondary);
+    }
+
+    .info-box li {
+      margin-bottom: 0.25rem;
+    }
+
+    /* Chat styling */
+    .chat-container {
+      height: 350px;
+      overflow-y: auto;
+      padding: 1rem;
+      background-color: white;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border);
+      margin-bottom: 1rem;
+      scroll-behavior: smooth;
+    }
+
+    .chat-message {
+      margin-bottom: 1rem;
+      padding: 0.75rem 1rem;
+      border-radius: var(--radius-md);
+      max-width: 80%;
+      word-wrap: break-word;
+      position: relative;
+      line-height: 1.5;
+    }
+
+    .user-message {
+      background-color: var(--primary);
+      color: white;
+      margin-left: auto;
+      border-bottom-right-radius: 4px;
+    }
+
+    .assistant-message {
+      background-color: var(--background);
+      color: var(--text-primary);
+      margin-right: auto;
+      border-bottom-left-radius: 4px;
+    }
+
+    .system-message {
+      background-color: rgba(112, 101, 240, 0.08);
+      color: var(--primary-dark);
+      max-width: 100%;
+      text-align: center;
+      padding: 0.5rem;
+      margin: 0.75rem 0;
+      font-size: 0.9rem;
+      border-radius: var(--radius-sm);
+    }
+
+    .chat-input-container {
+      display: flex;
+      gap: 0.75rem;
+      margin-bottom: 1rem;
+    }
+
+    .chat-input-wrapper {
+      position: relative;
+      flex-grow: 1;
+    }
+
+    .chat-input {
+      width: 100%;
+      resize: none;
+      padding-right: 3rem;
+    }
+
+    .send-icon {
+      position: absolute;
+      right: 1rem;
+      bottom: 0.85rem;
+      color: var(--primary);
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 1.25rem;
+    }
+
+    .send-icon:hover {
+      color: var(--primary-dark);
+    }
+
+    /* Dark mode variables */
+    :root.dark-theme {
+      --primary: #A189F3;
+      --primary-light: #B3A2F5;
+      --primary-dark: #7E63E1;
+      --secondary: #4FD0E6;
+      --background: #121212;
+      --card-bg: #1E1E2E;
+      --text-primary: #ECECEC;
+      --text-secondary: #B9B9B9;
+      --border: #33334C;
+      --hover: #2A2A3C;
+      --shadow-sm: 0 2px 4px rgba(0,0,0,0.2);
+      --shadow-md: 0 4px 6px rgba(0,0,0,0.25), 0 2px 4px rgba(0,0,0,0.15);
+      --shadow-lg: 0 10px 15px rgba(0,0,0,0.25), 0 4px 6px rgba(0,0,0,0.15);
+    }
+
+    /* Dark mode improvements for result areas */
+    :root.dark-theme .result-card {
+      background-color: var(--card-bg);
+      color: var(--text-primary);
+    }
+    :root.dark-theme .result-content {
+      background-color: var(--card-bg);
+      color: var(--text-primary);
+      border: 1px solid var(--border);
+    }
+    :root.dark-theme .result {
+      background-color: var(--card-bg);
+      color: var(--text-primary);
+      border: 1px solid var(--border);
+    }
+
+    /* Dark mode toggle switch */
+    .theme-switch-wrapper {
+      display: flex;
+      align-items: center;
+      position: absolute;
+      top: 1.25rem;
+      right: 1.5rem;
+      z-index: 100;
+    }
+
+    .theme-switch {
+      display: inline-block;
+      height: 1.75rem;
+      position: relative;
+      width: 3.5rem;
+    }
+
+    .theme-switch input {
+      display: none;
+    }
+
+    .slider {
+      background-color: var(--border);
+      bottom: 0;
+      cursor: pointer;
+      left: 0;
+      position: absolute;
+      right: 0;
+      top: 0;
+      transition: .4s;
+      border-radius: 2rem;
+    }
+
+    .slider:before {
+      background-color: white;
+      bottom: 0.25rem;
+      content: "";
+      height: 1.25rem;
+      left: 0.25rem;
+      position: absolute;
+      transition: .4s;
+      width: 1.25rem;
+      border-radius: 50%;
+    }
+
+    input:checked + .slider {
+      background: linear-gradient(120deg, var(--primary), var(--secondary));
+    }
+
+    input:checked + .slider:before {
+      transform: translateX(1.75rem);
+    }
+
+    .theme-icon {
+      margin: 0 0.5rem;
+      color: var(--text-secondary);
+      font-size: 1.2rem;
+    }
+
+    /* Input adjustments for dark mode */
+    :root.dark-theme input,
+    :root.dark-theme select,
+    :root.dark-theme textarea {
+      background-color: #3A3A4C;
+      color: #ECECEC;
+      border-color: #4D4D69;
+    }
+
+    :root.dark-theme input::placeholder,
+    :root.dark-theme select::placeholder,
+    :root.dark-theme textarea::placeholder {
+      color: #8A8AA3;
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+      .app-container {
+        padding: 1rem;
+      }
+      h1 {
+        font-size: 1.8rem;
+      }
+      .tabs {
+        flex-direction: column;
+        padding: 0.5rem;
+        gap: 0.5rem;
+      }
+      .tab {
+        padding: 0.6rem 1rem;
+        text-align: left;
+      }
+      .tab-indicator {
+        display: none;
+      }
+      .tab.active {
+        background: linear-gradient(120deg, var(--primary), var(--secondary));
+      }
+      .result-title {
+        font-size: 1rem;
+      }
+      .chat-message {
+        max-width: 90%;
+      }
+      .theme-switch-wrapper {
+        top: 0.75rem;
+        right: 1rem;
+      }
+    }
+  </style>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700&display=swap"
+    rel="stylesheet"
+  />
+  <!-- Font Awesome for icons -->
+  <link
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+  />
+</head>
+<body>
+  <div class="app-container">
+    <!-- Dark Mode Toggle -->
+    <div class="theme-switch-wrapper">
+      <i class="fas fa-sun theme-icon"></i>
+      <label class="theme-switch">
+        <input type="checkbox" id="theme-toggle" />
+        <span class="slider"></span>
+      </label>
+      <i class="fas fa-moon theme-icon"></i>
+    </div>
+
+    <header>
+      <h1>Mistral Document Chat</h1>
+      <p class="subtitle">Analyze documents and images with AI-powered insights</p>
+    </header>
+
+    <!-- Main Container -->
+    <div class="container">
+      <div class="card">
+        <!-- Tabs -->
+        <div class="tabs">
+          <div class="tab active" data-tab="url-content">
+            <i class="fas fa-file-alt"></i> Document Chat
+          </div>
+          <div class="tab" data-tab="api-content">
+            <i class="fas fa-cog"></i> API Settings
+          </div>
+          <div class="tab" data-tab="multi-content">
+            <i class="fas fa-comments"></i> Interactive Chat
+          </div>
+          <div class="tab-indicator"></div>
+        </div>
+
+        <!-- Document Chat Tab -->
+        <div id="url-content" class="tab-content active">
+          <div class="form-group">
+            <label for="document-url">Document or Image URL</label>
+            <input
+              type="text"
+              id="document-url"
+              placeholder="https://example.com/document.pdf or image.png"
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="is-image">Document Type</label>
+            <select id="is-image">
+              <option value="auto">Auto-detect from URL</option>
+              <option value="image">Image</option>
+              <option value="document">PDF Document</option>
+            </select>
+          </div>
+
+          <div class="info-box">
+            <p><i class="fas fa-shield-alt"></i> File Processing Details</p>
+            <ul>
+              <li>This app downloads your document and uploads it securely to Mistral's File API</li>
+              <li>Works with Google Drive, Dropbox, Proton Drive, OneDrive, and more</li>
+              <li>Files are processed temporarily and not stored permanently</li>
+            </ul>
+          </div>
+
+          <div class="info-box">
+            <p><i class="fas fa-shield-alt"></i> File Processing Details</p>
+            <ul>
+              <li>This app downloads your document and uploads it securely to Mistral's File API</li>
+              <li>Works with Google Drive, Dropbox, Proton Drive, OneDrive, and more</li>
+              <li>Files are processed temporarily and not stored permanently</li>
+            </ul>
+          </div>
+
+          <div class="info-box">
+            <p><i class="fas fa-info-circle"></i> URL Tips</p>
+            <ul>
+              <li>For Google Drive, make sure the link is set to \"Anyone with the link can view\"</li>
+              <li>For Proton Drive, use the sharing link from the web interface</li>
+              <li>For Dropbox, use a direct link (ends with dl=1)</li>
+              <li>For OneDrive, iCloud, and Box, use public sharing links</li>
+              <li>If auto-detection fails, manually select the document type</li>
+            </ul>
+          </div>
+
+          <div class="form-group">
+            <label for="question">Question about the document</label>
+            <textarea
+              id="question"
+              rows="3"
+              placeholder="What would you like to know about this document?"
+            ></textarea>
+          </div>
+
+          <button id="process-btn" class="btn btn-primary">
+            <i class="fas fa-search"></i> Analyze Document
+          </button>
+        </div>
+
+        <!-- API Settings Tab -->
+        <div id="api-content" class="tab-content">
+          <div class="form-group">
+            <label for="api-key">Mistral API Key</label>
+            <input
+              type="password"
+              id="api-key"
+              value="YANCyuHSLM9Kjvh2ycdjMjoIoONMlMNZ"
+              placeholder="Your Mistral API Key"
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="ocr-model">OCR Model</label>
+            <input
+              type="text"
+              id="ocr-model"
+              value="mistral-ocr-latest"
+              placeholder="OCR Model Name"
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="chat-model">Chat Model</label>
+            <input
+              type="text"
+              id="chat-model"
+              value="mistral-small-latest"
+              placeholder="Chat Model Name"
+            />
+          </div>
+
+          <div class="btn-group">
+            <button id="save-settings-btn" class="btn btn-primary">
+              <i class="fas fa-save"></i> Save Settings
+            </button>
+            <button id="reset-settings-btn" class="btn btn-secondary">
+              <i class="fas fa-undo"></i> Reset to Defaults
+            </button>
+          </div>
+        </div>
+
+        <!-- Interactive Chat Tab -->
+        <div id="multi-content" class="tab-content">
+          <div class="form-group">
+            <label for="chat-document-url">Document or Image URL</label>
+            <input
+              type="text"
+              id="chat-document-url"
+              placeholder="https://example.com/document.pdf or image.png"
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="chat-is-image">Document Type</label>
+            <select id="chat-is-image">
+              <option value="auto">Auto-detect from URL</option>
+              <option value="image">Image</option>
+              <option value="document">PDF Document</option>
+            </select>
+          </div>
+
+          <div class="info-box">
+            <p><i class="fas fa-shield-alt"></i> File Processing Details</p>
+            <ul>
+              <li>This app downloads your document and uploads it securely to Mistral's File API</li>
+              <li>Works with Google Drive, Dropbox, Proton Drive, OneDrive, and more</li>
+              <li>Files are processed temporarily and not stored permanently</li>
+            </ul>
+          </div>
+
+          <div class="info-box">
+            <p><i class="fas fa-info-circle"></i> Tips for Interactive Chat</p>
+            <ul>
+              <li>Make sure URLs are publicly accessible</li>
+              <li>Supports Google Drive, Proton Drive, Dropbox, OneDrive, iCloud, and Box</li>
+              <li>For best results, ask specific questions about document content</li>
+              <li>You can have a multi-turn conversation about the same document</li>
+            </ul>
+          </div>
+
+          <button id="start-chat-btn" class="btn btn-primary">
+            <i class="fas fa-play"></i> Start New Chat
+          </button>
+
+          <div class="chat-container" id="chat-messages">
+            <!-- Chat messages will appear here -->
+          </div>
+
+          <div class="chat-input-container">
+            <div class="chat-input-wrapper">
+              <textarea
+                id="chat-input"
+                class="chat-input"
+                rows="2"
+                placeholder="Ask a question about the document..."
+              ></textarea>
+              <button class="send-icon" id="send-message-btn">
+                <i class="fas fa-paper-plane"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="loading" id="loading">
+          <div class="spinner"></div>
+          <p>Processing document... This may take a moment.</p>
+        </div>
+
+        <div class="error" id="error"></div>
+
+        <div id="results"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Default settings
+    let settings = {
+      apiKey: "YANCyuHSLM9Kjvh2ycdjMjoIoONMlMNZ",
+      ocrModel: "mistral-ocr-latest",
+      chatModel: "mistral-small-latest"
+    };
+
+    // Chat history for multi-turn conversations
+    let chatHistory = [];
+    let documentUrl = '';
+    let documentType = '';
+    let documentText = '';
+
+    // DOM Elements
+    const tabs = document.querySelectorAll('.tab');
+    const tabContents = document.querySelectorAll('.tab-content');
+    const tabIndicator = document.querySelector('.tab-indicator');
+    const processBtn = document.getElementById('process-btn');
+    const saveSettingsBtn = document.getElementById('save-settings-btn');
+    const resetSettingsBtn = document.getElementById('reset-settings-btn');
+    const startChatBtn = document.getElementById('start-chat-btn');
+    const sendMessageBtn = document.getElementById('send-message-btn');
+    const chatInput = document.getElementById('chat-input');
+
+    // Initialize UI
+    document.addEventListener('DOMContentLoaded', function() {
+      loadSettings();
+      initializeTabs();
+      setupEventListeners();
+      initThemeToggle();
+    });
+
+    // Tab functionality
+    function initializeTabs() {
+      updateTabIndicator(0);
+      tabs.forEach((tab, index) => {
+        tab.addEventListener('click', () => {
+          tabs.forEach(t => t.classList.remove('active'));
+          tabContents.forEach(c => c.classList.remove('active'));
+          tab.classList.add('active');
+          const tabId = tab.getAttribute('data-tab');
+          document.getElementById(tabId).classList.add('active');
+          updateTabIndicator(index);
+        });
+      });
+    }
+
+    function updateTabIndicator(activeIndex) {
+      if (window.innerWidth <= 768) return;
+      const activeTab = tabs[activeIndex];
+      if (activeTab && tabIndicator) {
+        const tabWidth = 100 / tabs.length;
+        tabIndicator.style.width = `${tabWidth}%`;
+        tabIndicator.style.left = `${activeIndex * tabWidth}%`;
+      }
+    }
+
+    // Set up event listeners
+    function setupEventListeners() {
+      processBtn.addEventListener('click', processDocument);
+      saveSettingsBtn.addEventListener('click', saveSettings);
+      resetSettingsBtn.addEventListener('click', resetToDefaults);
+      startChatBtn.addEventListener('click', startNewChat);
+      sendMessageBtn.addEventListener('click', sendChatMessage);
+      chatInput.addEventListener('keydown', function(event) {
+        if (event.key === 'Enter' && !event.shiftKey) {
+          event.preventDefault();
+          sendChatMessage();
+        }
+      });
+      chatInput.addEventListener('input', function() {
+        this.style.height = 'auto';
+        this.style.height = (this.scrollHeight) + 'px';
+        if (this.scrollHeight > 150) {
+          this.style.height = '150px';
+        }
+      });
+      window.addEventListener('resize', function() {
+        const activeIndex = Array.from(tabs).findIndex(tab => tab.classList.contains('active'));
+        updateTabIndicator(activeIndex);
+      });
+    }
+
+    // Dark Mode Toggle
+    function initThemeToggle() {
+      const themeToggle = document.getElementById('theme-toggle');
+      const savedTheme = localStorage.getItem('theme');
+      // Default to light mode unless localStorage says 'dark'
+      if (savedTheme === 'dark') {
+        document.documentElement.classList.add('dark-theme');
+        themeToggle.checked = true;
+      }
+      // Toggle the theme when checkbox changes
+      themeToggle.addEventListener('change', () => {
+        if (themeToggle.checked) {
+          document.documentElement.classList.add('dark-theme');
+          localStorage.setItem('theme', 'dark');
+        } else {
+          document.documentElement.classList.remove('dark-theme');
+          localStorage.setItem('theme', 'light');
+        }
+      });
+    }
+
+    // Load settings from localStorage if available
+    function loadSettings() {
+      const savedSettings = localStorage.getItem('mistralSettings');
+      if (savedSettings) {
+        settings = JSON.parse(savedSettings);
+        document.getElementById('api-key').value = settings.apiKey;
+        document.getElementById('ocr-model').value = settings.ocrModel;
+        document.getElementById('chat-model').value = settings.chatModel;
+      }
+    }
+
+    // Save settings to localStorage
+    function saveSettings() {
+      settings.apiKey = document.getElementById('api-key').value;
+      settings.ocrModel = document.getElementById('ocr-model').value;
+      settings.chatModel = document.getElementById('chat-model').value;
+      localStorage.setItem('mistralSettings', JSON.stringify(settings));
+      const resultsDiv = document.getElementById('results');
+      resultsDiv.innerHTML = `
+        <div class="result-card" style="background-color: rgba(52, 211, 153, 0.1); border-left: 3px solid var(--success);">
+          <div class="result-title"><i class="fas fa-check-circle" style="color: var(--success);"></i> Settings saved successfully</div>
+          <div class="result-content" style="background: transparent; border: none;">
+            Your API settings have been saved and will be used for all document processing.
+          </div>
+        </div>
+      `;
+    }
+
+    // Reset settings to defaults
+    function resetToDefaults() {
+      document.getElementById('api-key').value = "YANCyuHSLM9Kjvh2ycdjMjoIoONMlMNZ";
+      document.getElementById('ocr-model').value = "mistral-ocr-latest";
+      document.getElementById('chat-model').value = "mistral-small-latest";
+      saveSettings();
+    }
+
+    // Detect document type from URL
+    function detectDocumentType(url) {
+      const lowerUrl = url.toLowerCase();
+      if (
+        lowerUrl.endsWith('.png') ||
+        lowerUrl.endsWith('.jpg') ||
+        lowerUrl.endsWith('.jpeg') ||
+        lowerUrl.endsWith('.gif') ||
+        lowerUrl.endsWith('.webp') ||
+        lowerUrl.endsWith('.bmp') ||
+        lowerUrl.endsWith('.tiff')
+      ) {
+        return 'image_url';
+      }
+      if (lowerUrl.endsWith('.pdf')) {
+        return 'document_url';
+      }
+      if (lowerUrl.includes('drive.google.com') || lowerUrl.includes('docs.google.com')) {
+        return 'document_url';
+      }
+      if (lowerUrl.includes('dropbox.com')) {
+        // Ensure proper direct download for Dropbox
+        if (lowerUrl.includes('?dl=0')) {
+          url = url.replace('?dl=0', '?dl=1');
+        }
+        return lowerUrl.includes('pdf') ? 'document_url' : 'image_url';
+      }
+      if (lowerUrl.includes('github.com')) {
+        return lowerUrl.includes('pdf') ? 'document_url' : 'image_url';
+      }
+      if (lowerUrl.includes('onedrive.live.com') || lowerUrl.includes('1drv.ms')) {
+        return 'document_url';
+      }
+      if (lowerUrl.includes('drive.proton.me') || lowerUrl.includes('proton.me/urls/')) {
+        return 'document_url';
+      }
+      if (lowerUrl.includes('icloud.com') || lowerUrl.includes('apple.com/sharedfiles/')) {
+        return 'document_url';
+      }
+      if (lowerUrl.includes('box.com')) {
+        return 'document_url';
+      }
+      return 'document_url';
+    }
+
+    // Process URL to ensure it's compatible with the API
+    function processUrl(url) {
+      url = url.trim();
+      // Handle Dropbox URLs by converting to direct download links
+      if (url.includes('dropbox.com')) {
+        url = url.replace('www.dropbox.com', 'dl.dropboxusercontent.com');
+        if (url.includes('?dl=0')) {
+          url = url.replace('?dl=0', '?dl=1');
+        } else if (!url.includes('?dl=1')) {
+          url += '?dl=1';
+        }
+        return url;
+      }
+      // Convert Google Drive file links
+      if (url.includes('drive.google.com/file/d/')) {
+        const fileIdMatch = url.match(/\/file\/d\/([^\/]+)/);
+        if (fileIdMatch && fileIdMatch[1]) {
+          return `https://drive.google.com/uc?export=view&id=${fileIdMatch[1]}`;
+        }
+      }
+      // Convert Google Docs links to PDF
+      if (url.includes('docs.google.com/document/d/')) {
+        const fileIdMatch = url.match(/\/document\/d\/([^\/]+)/);
+        if (fileIdMatch && fileIdMatch[1]) {
+          return `https://docs.google.com/document/d/${fileIdMatch[1]}/export?format=pdf`;
+        }
+      }
+      return url;
+    }
+
+    // Process document with file upload then OCR
+    async function processDocumentWithProxy(url, docType, question) {
+      const resultsDiv = document.getElementById('results');
+      const loadingDiv = document.getElementById('loading');
+      const errorDiv = document.getElementById('error');
+      try {
+        loadingDiv.style.display = 'block';
+        const corsProxy = 'https://corsproxy.io/?';
+        const fileUrlEncoded = encodeURIComponent(url);
+        const proxiedUrl = corsProxy + fileUrlEncoded;
+        console.log('Fetching document through CORS proxy...');
+        const response = await fetch(proxiedUrl, { method: 'GET' });
+        if (!response.ok) {
+          throw new Error(`Could not fetch document: ${response.status} ${response.statusText}`);
+        }
+        const fileBlob = await response.blob();
+        console.log('Document fetched. Now uploading to Mistral Files API...');
+        const formData = new FormData();
+        formData.append('purpose', 'ocr');
+        let filename = url.split('/').pop().split('?')[0] || 'document.pdf';
+        if (!filename.includes('.')) {
+          if (isImageFile(fileBlob, url)) {
+            filename += '.jpg';
+          } else {
+            filename += '.pdf';
+          }
+        }
+        const file = new File([fileBlob], filename, { type: fileBlob.type });
+        formData.append('file', file);
+        const uploadResponse = await fetch('https://api.mistral.ai/v1/files', {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${settings.apiKey}` },
+          body: formData
+        });
+        if (!uploadResponse.ok) {
+          throw new Error(`File upload error: ${uploadResponse.status} ${await uploadResponse.text()}`);
+        }
+        const uploadData = await uploadResponse.json();
+        const fileId = uploadData.id;
+        // Fetch direct file URL from Mistral Files API
+        const fileUrlResponse = await fetch(`https://api.mistral.ai/v1/files/${fileId}/url?expiry=24`, {
+          method: 'GET',
+          headers: {
+            Accept: 'application/json',
+            Authorization: `Bearer ${settings.apiKey}`
+          }
+        });
+        if (!fileUrlResponse.ok) {
+          throw new Error(`Error fetching file URL: ${fileUrlResponse.status} ${await fileUrlResponse.text()}`);
+        }
+        const fileUrlData = await fileUrlResponse.json();
+        const fileUrl = fileUrlData.url;
+        console.log('File uploaded successfully. File URL:', fileUrl);
+        const ocrPayload = {
+          model: settings.ocrModel,
+          document: {
+            type: isImageFile(fileBlob, url) ? 'image_url' : 'document_url',
+            [isImageFile(fileBlob, url) ? 'image_url' : 'document_url']: fileUrl
+          }
+        };
+        console.log('Calling OCR API with uploaded file URL...');
+        const ocrResponse = await fetch('https://api.mistral.ai/v1/ocr', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${settings.apiKey}`
+          },
+          body: JSON.stringify(ocrPayload)
+        });
+        if (!ocrResponse.ok) {
+          throw new Error(`OCR API error: ${ocrResponse.status} ${await ocrResponse.text()}`);
+        }
+        const ocrData = await ocrResponse.json();
+        let extractedText = '';
+        if (ocrData.pages && ocrData.pages.length > 0) {
+          ocrData.pages.forEach((page, index) => {
+            extractedText += `## Page ${index + 1}\n${page.markdown}\n\n`;
+          });
+        }
+        if (!question) {
+          resultsDiv.innerHTML = `
+            <div class="result-card">
+              <div class="result-title">OCR Results</div>
+              <div class="result-content">${extractedText}</div>
+            </div>
+          `;
+          loadingDiv.style.display = 'none';
+          return;
+        }
+        console.log('Calling Chat API with extracted text...');
+        const chatPayload = {
+          model: settings.chatModel,
+          messages: [
+            {
+              role: 'system',
+              content: 'You are analyzing a document. Answer questions about it.'
+            },
+            {
+              role: 'user',
+              content: `Document content:\n\n${extractedText}\n\nQuestion: ${question}`
+            }
+          ]
+        };
+        const chatResponse = await fetch('https://api.mistral.ai/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${settings.apiKey}`
+          },
+          body: JSON.stringify(chatPayload)
+        });
+        if (!chatResponse.ok) {
+          throw new Error(`Chat API error: ${chatResponse.status} ${await chatResponse.text()}`);
+        }
+        const chatData = await chatResponse.json();
+        const answer = chatData.choices[0].message.content;
+        resultsDiv.innerHTML = `
+          <div class="result-card">
+            <div class="result-title">Your Question</div>
+            <div class="result-content">${question}</div>
+          </div>
+          <div class="result-card">
+            <div class="result-title">Answer</div>
+            <div class="result-content">${answer}</div>
+          </div>
+        `;
+      } catch (error) {
+        console.error('Error:', error);
+        errorDiv.innerText = error.message;
+        errorDiv.style.display = 'block';
+      } finally {
+        loadingDiv.style.display = 'none';
+      }
+    }
+
+    // Helper function to convert blob to base64
+    function blobToBase64(blob) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+      });
+    }
+
+    // Determine if this is an image based on file extension or MIME type
+    function isImageFile(blob, filename) {
+      if (blob.type.startsWith('image/')) {
+        return true;
+      }
+      if (filename) {
+        const ext = filename.split('.').pop().toLowerCase();
+        const imageExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'svg', 'tiff'];
+        return imageExtensions.includes(ext);
+      }
+      return false;
+    }
+
+    function processDocument() {
+      const url = document.getElementById('document-url').value.trim();
+      const typeSelect = document.getElementById('is-image').value;
+      const question = document.getElementById('question').value.trim();
+      const errorDiv = document.getElementById('error');
+      document.getElementById('results').innerHTML = '';
+      errorDiv.style.display = 'none';
+      if (!url) {
+        errorDiv.innerText = 'Please enter a document URL';
+        errorDiv.style.display = 'block';
+        return;
+      }
+      const processedUrl = processUrl(url);
+      let docType;
+      if (typeSelect === 'auto') {
+        docType = detectDocumentType(processedUrl);
+      } else if (typeSelect === 'image') {
+        docType = 'image_url';
+      } else {
+        docType = 'document_url';
+      }
+      processDocumentWithProxy(processedUrl, docType, question);
+    }
+
+    async function startNewChat() {
+      const url = document.getElementById('chat-document-url').value.trim();
+      const typeSelect = document.getElementById('chat-is-image').value;
+      const chatContainer = document.getElementById('chat-messages');
+      const errorDiv = document.getElementById('error');
+      const loadingDiv = document.getElementById('loading');
+      errorDiv.style.display = 'none';
+      chatHistory = [];
+      chatContainer.innerHTML = '';
+      if (!url) {
+        errorDiv.innerText = 'Please enter a document URL';
+        errorDiv.style.display = 'block';
+        return;
+      }
+      const processedUrl = processUrl(url);
+      if (typeSelect === 'auto') {
+        documentType = detectDocumentType(processedUrl);
+      } else if (typeSelect === 'image') {
+        documentType = 'image_url';
+      } else {
+        documentType = 'document_url';
+      }
+      documentUrl = processedUrl;
+      loadingDiv.style.display = 'block';
+      try {
+        const corsProxy = 'https://corsproxy.io/?';
+        const fileUrlEncoded = encodeURIComponent(processedUrl);
+        const proxiedUrl = corsProxy + fileUrlEncoded;
+        console.log('Fetching document through CORS proxy for chat...');
+        const response = await fetch(proxiedUrl, { method: 'GET' });
+        if (!response.ok) {
+          throw new Error(`Could not fetch document: ${response.status} ${response.statusText}`);
+        }
+        const fileBlob = await response.blob();
+        console.log('Document fetched. Now uploading to Mistral Files API...');
+        const formData = new FormData();
+        formData.append('purpose', 'ocr');
+        let filename = url.split('/').pop().split('?')[0] || 'document.pdf';
+        if (!filename.includes('.')) {
+          if (isImageFile(fileBlob, url)) {
+            filename += '.jpg';
+          } else {
+            filename += '.pdf';
+          }
+        }
+        const file = new File([fileBlob], filename, { type: fileBlob.type });
+        formData.append('file', file);
+        const uploadResponse = await fetch('https://api.mistral.ai/v1/files', {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${settings.apiKey}` },
+          body: formData
+        });
+        if (!uploadResponse.ok) {
+          throw new Error(`File upload error: ${uploadResponse.status} ${await uploadResponse.text()}`);
+        }
+        const uploadData = await uploadResponse.json();
+        const fileId = uploadData.id;
+        // Fetch direct file URL
+        const fileUrlResponse = await fetch(`https://api.mistral.ai/v1/files/${fileId}/url?expiry=24`, {
+          method: 'GET',
+          headers: {
+            Accept: 'application/json',
+            Authorization: `Bearer ${settings.apiKey}`
+          }
+        });
+        if (!fileUrlResponse.ok) {
+          throw new Error(`Error fetching file URL: ${fileUrlResponse.status} ${await fileUrlResponse.text()}`);
+        }
+        const fileUrlData = await fileUrlResponse.json();
+        const fileUrl = fileUrlData.url;
+        console.log('File uploaded successfully. File URL:', fileUrl);
+        const ocrPayload = {
+          model: settings.ocrModel,
+          document: {
+            type: isImageFile(fileBlob, url) ? 'image_url' : 'document_url',
+            [isImageFile(fileBlob, url) ? 'image_url' : 'document_url']: fileUrl
+          }
+        };
+        const ocrResponse = await fetch('https://api.mistral.ai/v1/ocr', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${settings.apiKey}`
+          },
+          body: JSON.stringify(ocrPayload)
+        });
+        if (!ocrResponse.ok) {
+          throw new Error(`OCR API error: ${ocrResponse.status} ${await ocrResponse.text()}`);
+        }
+        const ocrData = await ocrResponse.json();
+        let extractedText = '';
+        if (ocrData.pages && ocrData.pages.length > 0) {
+          ocrData.pages.forEach((page, index) => {
+            extractedText += `## Page ${index + 1}\n${page.markdown}\n\n`;
+          });
+        }
+        documentText = extractedText;
+        const systemMessage = document.createElement('div');
+        systemMessage.className = 'chat-message system-message';
+        systemMessage.innerText = 'Document processed successfully. I am ready to answer questions about it.';
+        chatContainer.appendChild(systemMessage);
+        const docInfoMessage = document.createElement('div');
+        docInfoMessage.className = 'chat-message assistant-message';
+        docInfoMessage.innerText = `Document loaded: ${url}`;
+        chatContainer.appendChild(docInfoMessage);
+        loadingDiv.style.display = 'none';
+        chatContainer.scrollTop = chatContainer.scrollHeight;
+      } catch (error) {
+        console.error('Error:', error);
+        errorDiv.innerText = error.message;
+        errorDiv.style.display = 'block';
+        loadingDiv.style.display = 'none';
+      }
+    }
+
+    async function sendChatMessage() {
+      const messageInput = document.getElementById('chat-input');
+      const message = messageInput.value.trim();
+      const chatContainer = document.getElementById('chat-messages');
+      const errorDiv = document.getElementById('error');
+      const loadingDiv = document.getElementById('loading');
+      errorDiv.style.display = 'none';
+      if (!message) {
+        return;
+      }
+      if (!documentUrl || !documentText) {
+        errorDiv.innerText = 'Please start a new chat with a document first';
+        errorDiv.style.display = 'block';
+        return;
+      }
+      const userMessage = document.createElement('div');
+      userMessage.className = 'chat-message user-message';
+      userMessage.innerText = message;
+      chatContainer.appendChild(userMessage);
+      messageInput.value = '';
+      messageInput.style.height = 'auto';
+      loadingDiv.style.display = 'block';
+      try {
+        const messagesPayload = [
+          {
+            role: 'system',
+            content: 'You are analyzing a document. Answer questions about it. Here is the document content:\n\n' + documentText
+          }
+        ];
+        chatHistory.forEach(msg => {
+          messagesPayload.push(msg);
+        });
+        messagesPayload.push({
+          role: 'user',
+          content: message
+        });
+        const chatPayload = {
+          model: settings.chatModel,
+          messages: messagesPayload
+        };
+        const chatResponse = await fetch('https://api.mistral.ai/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${settings.apiKey}`
+          },
+          body: JSON.stringify(chatPayload)
+        });
+        if (!chatResponse.ok) {
+          throw new Error(`Chat API error: ${chatResponse.status} ${await chatResponse.text()}`);
+        }
+        const chatData = await chatResponse.json();
+        const answer = chatData.choices[0].message.content;
+        const assistantMessage = document.createElement('div');
+        assistantMessage.className = 'chat-message assistant-message';
+        assistantMessage.innerText = answer;
+        chatContainer.appendChild(assistantMessage);
+        chatHistory.push({
+          role: 'user',
+          content: message
+        });
+        chatHistory.push({
+          role: 'assistant',
+          content: answer
+        });
+      } catch (error) {
+        console.error('Error:', error);
+        errorDiv.innerText = error.message;
+        errorDiv.style.display = 'block';
+      } finally {
+        loadingDiv.style.display = 'none';
+        chatContainer.scrollTop = chatContainer.scrollHeight;
+      }
+    }
+  </script>
+</body>
+</html>
